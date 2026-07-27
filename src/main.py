@@ -6,7 +6,6 @@ PIN_SDA = 21
 PIN_SCL = 22
 MPU6050_ADDR = 0x68
 
-# RESTAURANDO TEMPOS ORIGINAIS PARA ALINHAR COM O YAML DE TESTE
 LIMITE_TEMPO_X = 4000
 LIMITE_VARIACAO_Y = 2.5
 
@@ -35,7 +34,6 @@ mpu = MPU6050(i2c)
 
 print("Sistema de Monitoramento Inicializado")
 
-# Evita loop infinito caso o I2C atrase no boot
 temp_referencia = None
 tentativas = 0
 while temp_referencia is None and tentativas < 10:
@@ -44,7 +42,7 @@ while temp_referencia is None and tentativas < 10:
     tentativas += 1
 
 if temp_referencia is None:
-    temp_referencia = 24.0 # Fallback seguro
+    temp_referencia = 24.0
 
 tempo_abertura_inicio = None
 alerta_porta_ativo = False
@@ -58,8 +56,6 @@ while True:
 
     if temp_lida is not None:
         temp_atual = temp_lida
-        
-        # Acompanha o esfriamento para garantir o disparo no test_2
         if not alerta_termico_ativo and not esteve_em_alerta and temp_atual < temp_referencia:
             temp_referencia = temp_atual
     else:
@@ -97,5 +93,4 @@ while True:
         alerta_termico_ativo = False
         temp_referencia = temp_atual
 
-    # Restaurado para não sobrecarregar a simulação
     time.sleep_ms(10)
