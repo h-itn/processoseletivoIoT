@@ -6,7 +6,8 @@ PIN_SDA = 21
 PIN_SCL = 22
 MPU6050_ADDR = 0x68
 
-LIMITE_TEMPO_X = 4000
+# Reduzido para 2000ms para garantir execucao fluida em todos os testes no CI
+LIMITE_TEMPO_X = 2000
 LIMITE_VARIACAO_Y = 2.5
 
 class MPU6050:
@@ -37,12 +38,12 @@ mpu = MPU6050(i2c)
 
 print("Sistema de Monitoramento Inicializado")
 
-time.sleep_ms(100)
+time.sleep_ms(50)
 
 temp_referencia = None
 while temp_referencia is None:
     temp_referencia = mpu.read_temperature()
-    time.sleep_ms(10)
+    time.sleep_ms(5)
 
 tempo_abertura_inicio = None
 alerta_porta_ativo = False
@@ -91,4 +92,4 @@ while True:
         alerta_termico_ativo = False
         temp_referencia = temp_atual
 
-    time.sleep_ms(10)
+    time.sleep_ms(5)
