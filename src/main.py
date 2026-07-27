@@ -13,6 +13,9 @@ class MPU6050:
     def __init__(self, i2c, addr=MPU6050_ADDR):
         self.i2c = i2c
         self.addr = addr
+        self._init_sensor()
+
+    def _init_sensor(self):
         try:
             self.i2c.writeto_mem(self.addr, 0x6B, b'\x00')
         except Exception:
@@ -26,24 +29,26 @@ class MPU6050:
                 raw_temp -= 65536
             return (raw_temp / 340.0) + 36.53
         except Exception:
+            self._init_sensor()
             return 20.0
 
-btn_porta = Pin(PIN_BTN, Pin.IN, Pin.PULL_UP)
+btn_porta = Pin(PIN_BTN, Pin.IN, Pin.PULL_DOWN)
 i2c = I2C(0, scl=Pin(PIN_SCL), sda=Pin(PIN_SDA), freq=400000)
 mpu = MPU6050(i2c)
 
 print("Sistema de Monitoramento Inicializado")
 
+time.sleep_ms(100)
 temp_referencia = mpu.read_temperature()
 tempo_abertura_inicio = None
 
 alerta_porta_ativo = False
 alerta_termico_ativo = False
+sistema_em_alerta = False
 
 while True:
     tempo_atual = time.ticks_ms()
-    
-    estado_porta = 1 if btn_porta.value() == 0 else 0
+    estado_porta = btn_porta.value()
     temp_atual = mpu.read_temperature()
 
     if estado_porta == 0:
@@ -53,8 +58,10 @@ while True:
         if not alerta_porta_ativo and time.ticks_diff(tempo_atual, tempo_abertura_inicio) >= LIMITE_TEMPO_X:
             print("ALERTA: Porta aberta por muito tempo!")
             alerta_porta_ativo = True
+            sistema_em_alerta = True
     else:
         tempo_abertura_inicio = None
+        alerta_porta_ativo = False
         if not alerta_termico_ativo:
             temp_referencia = temp_atual
 
@@ -64,12 +71,12 @@ while True:
         if not alerta_termico_ativo:
             print("ALERTA: Degradacao termica detectada!")
             alerta_termico_ativo = True
+            sistema_em_alerta = True
     else:
         alerta_termico_ativo = False
 
-    if (alerta_porta_ativo or alerta_termico_ativo) and (estado_porta == 1 and delta_t < LIMITE_VARIACAO_Y):
+    if sistema_em_alerta and (not alerta_porta_ativo) and (not alerta_termico_ativo) and (estado_porta == 1):
         print("Status: Sistema Normalizado.")
-        alerta_porta_ativo = False
-        alerta_termico_ativo = False
+        sistema_em_alerta = False
 
-    time.sleep_ms(50)
+    time.sleep_ms(20)
