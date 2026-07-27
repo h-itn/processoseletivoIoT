@@ -25,7 +25,7 @@
     [ "esp:21", "imu1:SDA", "blue", [ "v0" ] ],
     [ "esp:22", "imu1:SCL", "yellow", [ "v0" ] ],
     [ "esp:4", "btn1:1.l", "green", [ "h0" ] ],
-    [ "esp:3V3", "btn1:2.r", "red", [ "h0" ] ]
+    [ "esp:GND.2", "btn1:2.r", "black", [ "h0" ] ]
   ],
   "dependencies": {}
 }

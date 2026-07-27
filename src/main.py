@@ -28,7 +28,7 @@ class MPU6050:
         except Exception:
             return 20.0
 
-btn_porta = Pin(PIN_BTN, Pin.IN, Pin.PULL_DOWN)
+btn_porta = Pin(PIN_BTN, Pin.IN, Pin.PULL_UP)
 i2c = I2C(0, scl=Pin(PIN_SCL), sda=Pin(PIN_SDA), freq=400000)
 mpu = MPU6050(i2c)
 
@@ -42,7 +42,8 @@ alerta_termico_ativo = False
 
 while True:
     tempo_atual = time.ticks_ms()
-    estado_porta = btn_porta.value()
+    
+    estado_porta = 1 if btn_porta.value() == 0 else 0
     temp_atual = mpu.read_temperature()
 
     if estado_porta == 0:
@@ -54,7 +55,6 @@ while True:
             alerta_porta_ativo = True
     else:
         tempo_abertura_inicio = None
-        alerta_porta_ativo = False
         if not alerta_termico_ativo:
             temp_referencia = temp_atual
 
@@ -72,5 +72,4 @@ while True:
         alerta_porta_ativo = False
         alerta_termico_ativo = False
 
-    time.sleep_ms(10)
-    
+    time.sleep_ms(50)
