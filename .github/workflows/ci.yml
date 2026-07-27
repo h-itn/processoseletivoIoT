@@ -73,8 +73,11 @@ jobs:
         run: |
           cp src/main.py ./main.py
           rm -f fs.bin
-          echo '[wokwi]' > wokwi.toml
-          echo 'version = 1' >> wokwi.toml
+          cat << 'EOF' > wokwi.toml
+          [wokwi]
+          version = 1
+          firmware = "main.py"
+          EOF
 
       - name: Test with Wokwi
         uses: wokwi/wokwi-ci-action@v1
