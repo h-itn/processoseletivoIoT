@@ -1,82 +1,31 @@
-import time
-from machine import Pin, I2C
-
-PIN_BTN = 4
-PIN_SDA = 21
-PIN_SCL = 22
-MPU6050_ADDR = 0x68
-
-LIMITE_TEMPO_X = 4000
-LIMITE_VARIACAO_Y = 2.8
-
-class MPU6050:
-    def __init__(self, i2c, addr=MPU6050_ADDR):
-        self.i2c = i2c
-        self.addr = addr
-        self._init_sensor()
-
-    def _init_sensor(self):
-        try:
-            self.i2c.writeto_mem(self.addr, 0x6B, b'\x00')
-        except Exception:
-            pass
-
-    def read_temperature(self):
-        try:
-            data = self.i2c.readfrom_mem(self.addr, 0x41, 2)
-            raw_temp = (data[0] << 8) | data[1]
-            if raw_temp & 0x8000:
-                raw_temp -= 65536
-            return (raw_temp / 340.0) + 36.53
-        except Exception:
-            return 20.0
-
-btn_porta = Pin(PIN_BTN, Pin.IN, Pin.PULL_DOWN)
-i2c = I2C(0, scl=Pin(PIN_SCL), sda=Pin(PIN_SDA), freq=400000)
-mpu = MPU6050(i2c)
-
-print("Sistema de Monitoramento Inicializado")
-
-time.sleep_ms(200)
-
-temp_referencia = mpu.read_temperature()
-tempo_abertura_inicio = None
-
-alerta_porta_ativo = False
-alerta_termico_ativo = False
-esteve_em_alerta = False
-
-while True:
-    tempo_atual = time.ticks_ms()
-    estado_porta = btn_porta.value()
-    temp_atual = mpu.read_temperature()
-
-    if estado_porta == 0:
-        if tempo_abertura_inicio is None:
-            tempo_abertura_inicio = tempo_atual
-
-        if not alerta_porta_ativo and time.ticks_diff(tempo_atual, tempo_abertura_inicio) >= LIMITE_TEMPO_X:
-            print("ALERTA: Porta aberta por muito tempo!")
-            alerta_porta_ativo = True
-            esteve_em_alerta = True
-    else:
-        tempo_abertura_inicio = None
-        alerta_porta_ativo = False
-
-    delta_t = temp_atual - temp_referencia
-
-    if delta_t >= LIMITE_VARIACAO_Y:
-        if not alerta_termico_ativo:
-            print("ALERTA: Degradacao termica detectada!")
-            alerta_termico_ativo = True
-            esteve_em_alerta = True
-    else:
-        alerta_termico_ativo = False
-        if estado_porta == 1 and not alerta_porta_ativo:
-            temp_referencia = temp_atual
-
-    if esteve_em_alerta and (not alerta_porta_ativo) and (not alerta_termico_ativo) and (estado_porta == 1):
-        print("Status: Sistema Normalizado.")
-        esteve_em_alerta = False
-
-    time.sleep_ms(1)
+{
+  "version": 1,
+  "author": "LabMaker IoT",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    {
+      "type": "wokwi-mpu6050",
+      "id": "imu1",
+      "top": -120,
+      "left": 150,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn1",
+      "top": 100,
+      "left": -120,
+      "attrs": { "color": "red", "xray": "1" }
+    }
+  ],
+  "connections": [
+    [ "esp:GND.1", "imu1:GND", "black", [ "v0" ] ],
+    [ "esp:3V3", "imu1:VCC", "red", [ "v0" ] ],
+    [ "esp:21", "imu1:SDA", "blue", [ "v0" ] ],
+    [ "esp:22", "imu1:SCL", "yellow", [ "v0" ] ],
+    [ "esp:4", "btn1:1.l", "green", [ "h0" ] ],
+    [ "esp:3V3", "btn1:2.r", "red", [ "h0" ] ]
+  ],
+  "dependencies": {}
+}

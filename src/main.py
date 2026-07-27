@@ -6,8 +6,8 @@ PIN_SDA = 21
 PIN_SCL = 22
 MPU6050_ADDR = 0x68
 
-LIMITE_TEMPO_X = 2000
-LIMITE_VARIACAO_Y = 3.0
+LIMITE_TEMPO_X = 4000
+LIMITE_VARIACAO_Y = 2.8
 
 class MPU6050:
     def __init__(self, i2c, addr=MPU6050_ADDR):
@@ -37,6 +37,8 @@ mpu = MPU6050(i2c)
 
 print("Sistema de Monitoramento Inicializado")
 
+time.sleep_ms(200)
+
 temp_referencia = mpu.read_temperature()
 tempo_abertura_inicio = None
 
@@ -60,8 +62,6 @@ while True:
     else:
         tempo_abertura_inicio = None
         alerta_porta_ativo = False
-        if not alerta_termico_ativo:
-            temp_referencia = temp_atual
 
     delta_t = temp_atual - temp_referencia
 
@@ -72,9 +72,11 @@ while True:
             esteve_em_alerta = True
     else:
         alerta_termico_ativo = False
+        if estado_porta == 1 and not alerta_porta_ativo:
+            temp_referencia = temp_atual
 
     if esteve_em_alerta and (not alerta_porta_ativo) and (not alerta_termico_ativo) and (estado_porta == 1):
         print("Status: Sistema Normalizado.")
         esteve_em_alerta = False
 
-    time.sleep_ms(5)
+    time.sleep_ms(1)
