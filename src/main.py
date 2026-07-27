@@ -78,5 +78,7 @@ while True:
     if esteve_em_alerta and (not alerta_porta_ativo) and (not alerta_termico_ativo) and (estado_porta == 1):
         print("Status: Sistema Normalizado.")
         esteve_em_alerta = False
+        time.sleep_ms(500)
+        break
 
     time.sleep_ms(1)
