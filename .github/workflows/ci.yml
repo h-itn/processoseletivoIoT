@@ -69,19 +69,10 @@ jobs:
           name: esp32-firmware-binary
           path: .
 
-      - name: Prepare MicroPython for Wokwi
-        run: |
-          cp src/main.py ./main.py
-          rm -f fs.bin
-          cat << 'EOF' > wokwi.toml
-          [wokwi]
-          version = 1
-          firmware = "main.py"
-          EOF
-
       - name: Test with Wokwi
         uses: wokwi/wokwi-ci-action@v1
         with:
           token: ${{ secrets.WOKWI_CLI_TOKEN }}
           timeout: 30000
+          elf: fs.bin
           scenario: 'scenarios/${{ needs.detect_project.outputs.project_folder }}/${{ matrix.test_type }}.yaml'
