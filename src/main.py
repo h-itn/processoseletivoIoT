@@ -6,7 +6,7 @@ PIN_SDA = 21
 PIN_SCL = 22
 MPU6050_ADDR = 0x68
 
-LIMITE_TEMPO_X = 5000
+LIMITE_TEMPO_X = 4000
 LIMITE_VARIACAO_Y = 3.0
 
 class MPU6050:
@@ -29,7 +29,6 @@ class MPU6050:
                 raw_temp -= 65536
             return (raw_temp / 340.0) + 36.53
         except Exception:
-            self._init_sensor()
             return 20.0
 
 btn_porta = Pin(PIN_BTN, Pin.IN, Pin.PULL_DOWN)
@@ -38,13 +37,12 @@ mpu = MPU6050(i2c)
 
 print("Sistema de Monitoramento Inicializado")
 
-time.sleep_ms(100)
 temp_referencia = mpu.read_temperature()
 tempo_abertura_inicio = None
 
 alerta_porta_ativo = False
 alerta_termico_ativo = False
-sistema_em_alerta = False
+esteve_em_alerta = False
 
 while True:
     tempo_atual = time.ticks_ms()
@@ -58,7 +56,7 @@ while True:
         if not alerta_porta_ativo and time.ticks_diff(tempo_atual, tempo_abertura_inicio) >= LIMITE_TEMPO_X:
             print("ALERTA: Porta aberta por muito tempo!")
             alerta_porta_ativo = True
-            sistema_em_alerta = True
+            esteve_em_alerta = True
     else:
         tempo_abertura_inicio = None
         alerta_porta_ativo = False
@@ -71,12 +69,12 @@ while True:
         if not alerta_termico_ativo:
             print("ALERTA: Degradacao termica detectada!")
             alerta_termico_ativo = True
-            sistema_em_alerta = True
+            esteve_em_alerta = True
     else:
         alerta_termico_ativo = False
 
-    if sistema_em_alerta and (not alerta_porta_ativo) and (not alerta_termico_ativo) and (estado_porta == 1):
+    if esteve_em_alerta and (not alerta_porta_ativo) and (not alerta_termico_ativo) and (estado_porta == 1):
         print("Status: Sistema Normalizado.")
-        sistema_em_alerta = False
+        esteve_em_alerta = False
 
-    time.sleep_ms(20)
+    time.sleep_ms(10)
