@@ -1,10 +1,14 @@
 import time
 from machine import Pin, I2C
 
-# Delay estratégico de engate da serial
-time.sleep_ms(250)
+# 1. PAUSA ABSOLUTA DE BOOT (Gatilho de Sucesso)
+# Força o ESP32 a esperar 2 segundos completos antes de fazer qualquer coisa.
+# Isso garante que a Action do GitHub já esteja escutando o terminal.
+time.sleep(2)
+
 print("Sistema de Monitoramento Inicializado")
 
+# 2. Constantes e Configuração
 PIN_BTN = 4
 PIN_SDA = 21
 PIN_SCL = 22
@@ -34,19 +38,11 @@ class MPU6050:
         except Exception:
             return None
 
+# 3. Inicialização de Variáveis
 btn_porta = Pin(PIN_BTN, Pin.IN, Pin.PULL_DOWN)
 mpu = MPU6050(i2c)
 
-temp_referencia = None
-for _ in range(10):
-    try:
-        temp_referencia = mpu.read_temperature()
-        if temp_referencia is not None:
-            break
-    except Exception:
-        pass
-    time.sleep_ms(10)
-
+temp_referencia = mpu.read_temperature()
 if temp_referencia is None:
     temp_referencia = 24.0
 
@@ -55,6 +51,7 @@ alerta_porta_ativo = False
 alerta_termico_ativo = False
 esteve_em_alerta = False
 
+# 4. Loop Principal
 while True:
     try:
         tempo_atual = time.ticks_ms()
@@ -103,4 +100,4 @@ while True:
     except Exception:
         pass
 
-    time.sleep_ms(10)
+    time.sleep_ms(20)
