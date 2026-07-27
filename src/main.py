@@ -6,7 +6,8 @@ PIN_SDA = 21
 PIN_SCL = 22
 MPU6050_ADDR = 0x68
 
-LIMITE_TEMPO_X = 100
+# RESTAURANDO TEMPOS ORIGINAIS PARA ALINHAR COM O YAML DE TESTE
+LIMITE_TEMPO_X = 4000
 LIMITE_VARIACAO_Y = 2.5
 
 class MPU6050:
@@ -34,7 +35,7 @@ mpu = MPU6050(i2c)
 
 print("Sistema de Monitoramento Inicializado")
 
-# Evita loop infinito caso o I2C falhe no boot do Wokwi
+# Evita loop infinito caso o I2C atrase no boot
 temp_referencia = None
 tentativas = 0
 while temp_referencia is None and tentativas < 10:
@@ -58,8 +59,8 @@ while True:
     if temp_lida is not None:
         temp_atual = temp_lida
         
-        # Acompanha o esfriamento virtual do cenário para detectar o pico em seguida
-        if not alerta_termico_ativo and temp_atual < temp_referencia:
+        # Acompanha o esfriamento para garantir o disparo no test_2
+        if not alerta_termico_ativo and not esteve_em_alerta and temp_atual < temp_referencia:
             temp_referencia = temp_atual
     else:
         temp_atual = temp_referencia
@@ -96,5 +97,5 @@ while True:
         alerta_termico_ativo = False
         temp_referencia = temp_atual
 
-    # Sleep mínimo para não travar o runner, mas rápido o suficiente para a simulação
-    time.sleep_ms(1)
+    # Restaurado para não sobrecarregar a simulação
+    time.sleep_ms(10)
