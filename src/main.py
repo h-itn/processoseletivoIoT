@@ -6,7 +6,7 @@ PIN_SDA = 21
 PIN_SCL = 22
 MPU6050_ADDR = 0x68
 
-LIMITE_TEMPO_X = 4000
+LIMITE_TEMPO_X = 2000
 LIMITE_VARIACAO_Y = 3.0
 
 class MPU6050:
@@ -77,4 +77,4 @@ while True:
         print("Status: Sistema Normalizado.")
         esteve_em_alerta = False
 
-    time.sleep_ms(10)
+    time.sleep_ms(5)
