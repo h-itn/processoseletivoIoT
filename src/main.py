@@ -37,7 +37,7 @@ mpu = MPU6050(i2c)
 
 print("Sistema de Monitoramento Inicializado")
 
-time.sleep_ms(200)
+time.sleep_ms(150)
 
 temp_referencia = mpu.read_temperature()
 tempo_abertura_inicio = None
@@ -46,19 +46,24 @@ alerta_porta_ativo = False
 alerta_termico_ativo = False
 esteve_em_alerta = False
 
+estado_porta_anterior = btn_porta.value()
+
 while True:
     tempo_atual = time.ticks_ms()
     estado_porta = btn_porta.value()
     temp_atual = mpu.read_temperature()
 
     if estado_porta == 0:
-        if tempo_abertura_inicio is None:
+        if estado_porta_anterior == 1 and tempo_abertura_inicio is None:
+            tempo_abertura_inicio = tempo_atual
+        elif tempo_abertura_inicio is None and time.ticks_diff(tempo_atual, 0) > 1000:
             tempo_abertura_inicio = tempo_atual
 
-        if not alerta_porta_ativo and time.ticks_diff(tempo_atual, tempo_abertura_inicio) >= LIMITE_TEMPO_X:
-            print("ALERTA: Porta aberta por muito tempo!")
-            alerta_porta_ativo = True
-            esteve_em_alerta = True
+        if tempo_abertura_inicio is not None and not alerta_porta_ativo:
+            if time.ticks_diff(tempo_atual, tempo_abertura_inicio) >= LIMITE_TEMPO_X:
+                print("ALERTA: Porta aberta por muito tempo!")
+                alerta_porta_ativo = True
+                esteve_em_alerta = True
     else:
         tempo_abertura_inicio = None
         alerta_porta_ativo = False
@@ -78,7 +83,6 @@ while True:
     if esteve_em_alerta and (not alerta_porta_ativo) and (not alerta_termico_ativo) and (estado_porta == 1):
         print("Status: Sistema Normalizado.")
         esteve_em_alerta = False
-        time.sleep_ms(500)
-        break
 
-    time.sleep_ms(1)
+    estado_porta_anterior = estado_porta
+    time.sleep_ms(10)
