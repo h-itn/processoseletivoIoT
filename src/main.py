@@ -1,5 +1,5 @@
 import time
-from machine import Pin, SoftI2C
+from machine import Pin, I2C
 
 PIN_BTN = 4
 PIN_SDA = 21
@@ -8,6 +8,9 @@ MPU6050_ADDR = 0x68
 
 LIMITE_TEMPO_X = 4000
 LIMITE_VARIACAO_Y = 2.5
+
+# 1. I2C em nível de hardware com Timeout estrito para evitar o Code 42 (Congelamento)
+i2c = I2C(0, scl=Pin(PIN_SCL), sda=Pin(PIN_SDA), freq=100000, timeout=10000)
 
 class MPU6050:
     def __init__(self, i2c, addr=MPU6050_ADDR):
@@ -28,21 +31,14 @@ class MPU6050:
         except Exception:
             return None
 
-# Atraso estratégico para o robô do GitHub Actions acoplar o monitor serial
+# 2. Delay estratégico para garantir o acoplamento do Serial do GitHub Actions
 time.sleep_ms(250)
 
-# Migração para SoftI2C para evitar conflitos de barramento no simulador
-try:
-    btn_porta = Pin(PIN_BTN, Pin.IN, Pin.PULL_DOWN)
-    i2c = SoftI2C(scl=Pin(PIN_SCL), sda=Pin(PIN_SDA), freq=100000)
-    mpu = MPU6050(i2c)
-except Exception:
-    pass
-
-# Print garantido após acoplamento da serial
 print("Sistema de Monitoramento Inicializado")
 
-# Calibração inicial segura
+btn_porta = Pin(PIN_BTN, Pin.IN, Pin.PULL_DOWN)
+mpu = MPU6050(i2c)
+
 temp_referencia = None
 for _ in range(10):
     try:
@@ -61,7 +57,7 @@ alerta_porta_ativo = False
 alerta_termico_ativo = False
 esteve_em_alerta = False
 
-# Loop Principal Blindado
+# 3. Loop principal encapsulado para não quebrar a esteira
 while True:
     try:
         tempo_atual = time.ticks_ms()
@@ -75,7 +71,7 @@ while True:
         else:
             temp_atual = temp_referencia
 
-        # 1. Alarme da Porta Aberta
+        # --- Lógica de Porta Aberta ---
         if estado_porta == 0:
             if tempo_abertura_inicio is None:
                 tempo_abertura_inicio = tempo_atual
@@ -88,7 +84,7 @@ while True:
             tempo_abertura_inicio = None
             alerta_porta_ativo = False
 
-        # 2. Alarme Térmico
+        # --- Lógica de Alarme Térmico ---
         delta_t = temp_atual - temp_referencia
 
         if delta_t >= LIMITE_VARIACAO_Y:
@@ -99,7 +95,7 @@ while True:
         else:
             alerta_termico_ativo = False
 
-        # 3. Normalização
+        # --- Lógica de Normalização ---
         if esteve_em_alerta and estado_porta == 1 and delta_t < LIMITE_VARIACAO_Y:
             print("Status: Sistema Normalizado.")
             esteve_em_alerta = False
