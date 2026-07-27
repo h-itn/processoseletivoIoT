@@ -59,7 +59,7 @@ while True:
     else:
         temp_atual = temp_referencia
 
-    # 1. Monitoramento da Porta
+    # 1. Alarme de Porta Aberta
     if estado_porta == 0:
         if tempo_abertura_inicio is None:
             tempo_abertura_inicio = tempo_atual
@@ -72,7 +72,7 @@ while True:
         tempo_abertura_inicio = None
         alerta_porta_ativo = False
 
-    # 2. Monitoramento Térmico
+    # 2. Alarme de Degradação Térmica
     delta_t = temp_atual - temp_referencia
 
     if delta_t >= LIMITE_VARIACAO_Y:
@@ -82,12 +82,13 @@ while True:
             esteve_em_alerta = True
     else:
         alerta_termico_ativo = False
-        if estado_porta == 1 and not alerta_porta_ativo and not esteve_em_alerta:
-            temp_referencia = temp_atual
 
-    # 3. Normalização
-    if esteve_em_alerta and (not alerta_porta_ativo) and (not alerta_termico_ativo) and (estado_porta == 1):
+    # 3. Normalização do Sistema
+    if esteve_em_alerta and estado_porta == 1 and delta_t < LIMITE_VARIACAO_Y:
         print("Status: Sistema Normalizado.")
         esteve_em_alerta = False
+        alerta_porta_ativo = False
+        alerta_termico_ativo = False
+        temp_referencia = temp_atual
 
     time.sleep_ms(10)
