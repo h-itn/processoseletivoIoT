@@ -37,9 +37,8 @@ mpu = MPU6050(i2c)
 
 print("Sistema de Monitoramento Inicializado")
 
-time.sleep_ms(200)
+time.sleep_ms(100)
 
-# Inicialização da referência de temperatura
 temp_referencia = None
 while temp_referencia is None:
     temp_referencia = mpu.read_temperature()
@@ -55,13 +54,12 @@ while True:
     estado_porta = btn_porta.value()
     temp_lida = mpu.read_temperature()
 
-    # Validação da leitura de temperatura
     if temp_lida is not None:
         temp_atual = temp_lida
     else:
         temp_atual = temp_referencia
 
-    # 1. LOGICA DA PORTA ABERTA
+    # 1. Monitoramento da Porta
     if estado_porta == 0:
         if tempo_abertura_inicio is None:
             tempo_abertura_inicio = tempo_atual
@@ -74,7 +72,7 @@ while True:
         tempo_abertura_inicio = None
         alerta_porta_ativo = False
 
-    # 2. LOGICA DA DEGRADACAO TERMICA
+    # 2. Monitoramento Térmico
     delta_t = temp_atual - temp_referencia
 
     if delta_t >= LIMITE_VARIACAO_Y:
@@ -84,11 +82,10 @@ while True:
             esteve_em_alerta = True
     else:
         alerta_termico_ativo = False
-        # Atualiza a referência apenas se a porta estiver fechada e sem nenhum alerta ativo
         if estado_porta == 1 and not alerta_porta_ativo and not esteve_em_alerta:
             temp_referencia = temp_atual
 
-    # 3. LOGICA DE NORMALIZACAO
+    # 3. Normalização
     if esteve_em_alerta and (not alerta_porta_ativo) and (not alerta_termico_ativo) and (estado_porta == 1):
         print("Status: Sistema Normalizado.")
         esteve_em_alerta = False

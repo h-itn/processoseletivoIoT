@@ -77,10 +77,9 @@ jobs:
         name: esp32-firmware-binary
         path: .
 
-    - name: Test with Wokwi
-      uses: wokwi/wokwi-ci-action@v1
-      with:
+     - name: Test with Wokwi
+       uses: wokwi/wokwi-ci-action@v1
+       with:
         token: ${{ secrets.WOKWI_CLI_TOKEN }}
         timeout: 30000
-        elf: 'fs.bin'
         scenario: 'scenarios/${{ needs.detect_project.outputs.project_folder }}/${{ matrix.test_type }}.yaml'
