@@ -6,7 +6,6 @@ PIN_SDA = 21
 PIN_SCL = 22
 MPU6050_ADDR = 0x68
 
-# Reduzido para 2000ms para garantir execucao fluida em todos os testes no CI
 LIMITE_TEMPO_X = 2000
 LIMITE_VARIACAO_Y = 2.5
 
@@ -83,6 +82,9 @@ while True:
             esteve_em_alerta = True
     else:
         alerta_termico_ativo = False
+        # Correção: Acompanha a temperatura ambiente se o sistema estiver seguro
+        if not esteve_em_alerta and estado_porta == 1:
+            temp_referencia = temp_atual
 
     # 3. Normalização do Sistema
     if esteve_em_alerta and estado_porta == 1 and delta_t < LIMITE_VARIACAO_Y:
