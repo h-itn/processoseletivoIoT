@@ -8,9 +8,7 @@
       "id": "esp",
       "top": 0,
       "left": 0,
-      "attrs": {
-        "env": "micropython-2023.12.27"
-      }
+      "attrs": {}
     },
     {
       "type": "wokwi-mpu6050",
