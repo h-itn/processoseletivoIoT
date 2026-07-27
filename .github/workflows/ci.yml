@@ -73,7 +73,8 @@ jobs:
         run: |
           cp src/main.py ./main.py
           rm -f fs.bin
-          rm -f wokwi.toml
+          echo '[wokwi]' > wokwi.toml
+          echo 'version = 1' >> wokwi.toml
 
       - name: Test with Wokwi
         uses: wokwi/wokwi-ci-action@v1
