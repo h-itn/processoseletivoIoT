@@ -1,13 +1,10 @@
 import time
-import sys
 from machine import Pin, I2C
 
-# 1. Atraso para o robô plugar o serial e Print Imediato
-time.sleep_ms(200)
+# Delay estratégico de engate da serial
+time.sleep_ms(250)
 print("Sistema de Monitoramento Inicializado")
-sys.stdout.flush() # Força o envio da mensagem para o terminal do CI na hora
 
-# 2. Definição de Constantes
 PIN_BTN = 4
 PIN_SDA = 21
 PIN_SCL = 22
@@ -16,8 +13,7 @@ MPU6050_ADDR = 0x68
 LIMITE_TEMPO_X = 4000
 LIMITE_VARIACAO_Y = 2.5
 
-# 3. I2C em nível de hardware com Timeout estrito
-i2c = I2C(0, scl=Pin(PIN_SCL), sda=Pin(PIN_SDA), freq=100000, timeout=10000)
+i2c = I2C(0, scl=Pin(PIN_SCL), sda=Pin(PIN_SDA))
 
 class MPU6050:
     def __init__(self, i2c, addr=MPU6050_ADDR):
@@ -38,11 +34,9 @@ class MPU6050:
         except Exception:
             return None
 
-# 4. Inicialização do Hardware
 btn_porta = Pin(PIN_BTN, Pin.IN, Pin.PULL_DOWN)
 mpu = MPU6050(i2c)
 
-# Calibração inicial segura
 temp_referencia = None
 for _ in range(10):
     try:
@@ -61,7 +55,6 @@ alerta_porta_ativo = False
 alerta_termico_ativo = False
 esteve_em_alerta = False
 
-# 5. Loop principal encapsulado
 while True:
     try:
         tempo_atual = time.ticks_ms()
@@ -82,7 +75,6 @@ while True:
 
             if not alerta_porta_ativo and time.ticks_diff(tempo_atual, tempo_abertura_inicio) >= LIMITE_TEMPO_X:
                 print("ALERTA: Porta aberta por muito tempo!")
-                sys.stdout.flush()
                 alerta_porta_ativo = True
                 esteve_em_alerta = True
         else:
@@ -95,7 +87,6 @@ while True:
         if delta_t >= LIMITE_VARIACAO_Y:
             if not alerta_termico_ativo:
                 print("ALERTA: Degradacao termica detectada!")
-                sys.stdout.flush()
                 alerta_termico_ativo = True
                 esteve_em_alerta = True
         else:
@@ -104,7 +95,6 @@ while True:
         # --- Lógica de Normalização ---
         if esteve_em_alerta and estado_porta == 1 and delta_t < LIMITE_VARIACAO_Y:
             print("Status: Sistema Normalizado.")
-            sys.stdout.flush()
             esteve_em_alerta = False
             alerta_porta_ativo = False
             alerta_termico_ativo = False
