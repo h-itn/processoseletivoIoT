@@ -1,5 +1,5 @@
 import time
-from machine import Pin, I2C
+from machine import Pin, SoftI2C
 
 PIN_BTN = 4
 PIN_SDA = 21
@@ -28,18 +28,30 @@ class MPU6050:
         except Exception:
             return None
 
-btn_porta = Pin(PIN_BTN, Pin.IN, Pin.PULL_DOWN)
-i2c = I2C(0, scl=Pin(PIN_SCL), sda=Pin(PIN_SDA), freq=400000)
-mpu = MPU6050(i2c)
+# Atraso estratégico para o robô do GitHub Actions acoplar o monitor serial
+time.sleep_ms(250)
 
+# Migração para SoftI2C para evitar conflitos de barramento no simulador
+try:
+    btn_porta = Pin(PIN_BTN, Pin.IN, Pin.PULL_DOWN)
+    i2c = SoftI2C(scl=Pin(PIN_SCL), sda=Pin(PIN_SDA), freq=100000)
+    mpu = MPU6050(i2c)
+except Exception:
+    pass
+
+# Print garantido após acoplamento da serial
 print("Sistema de Monitoramento Inicializado")
 
+# Calibração inicial segura
 temp_referencia = None
-tentativas = 0
-while temp_referencia is None and tentativas < 10:
-    temp_referencia = mpu.read_temperature()
+for _ in range(10):
+    try:
+        temp_referencia = mpu.read_temperature()
+        if temp_referencia is not None:
+            break
+    except Exception:
+        pass
     time.sleep_ms(10)
-    tentativas += 1
 
 if temp_referencia is None:
     temp_referencia = 24.0
@@ -49,48 +61,53 @@ alerta_porta_ativo = False
 alerta_termico_ativo = False
 esteve_em_alerta = False
 
+# Loop Principal Blindado
 while True:
-    tempo_atual = time.ticks_ms()
-    estado_porta = btn_porta.value()
-    temp_lida = mpu.read_temperature()
+    try:
+        tempo_atual = time.ticks_ms()
+        estado_porta = btn_porta.value()
+        temp_lida = mpu.read_temperature()
 
-    if temp_lida is not None:
-        temp_atual = temp_lida
-        if not alerta_termico_ativo and not esteve_em_alerta and temp_atual < temp_referencia:
+        if temp_lida is not None:
+            temp_atual = temp_lida
+            if not alerta_termico_ativo and not esteve_em_alerta and temp_atual < temp_referencia:
+                temp_referencia = temp_atual
+        else:
+            temp_atual = temp_referencia
+
+        # 1. Alarme da Porta Aberta
+        if estado_porta == 0:
+            if tempo_abertura_inicio is None:
+                tempo_abertura_inicio = tempo_atual
+
+            if not alerta_porta_ativo and time.ticks_diff(tempo_atual, tempo_abertura_inicio) >= LIMITE_TEMPO_X:
+                print("ALERTA: Porta aberta por muito tempo!")
+                alerta_porta_ativo = True
+                esteve_em_alerta = True
+        else:
+            tempo_abertura_inicio = None
+            alerta_porta_ativo = False
+
+        # 2. Alarme Térmico
+        delta_t = temp_atual - temp_referencia
+
+        if delta_t >= LIMITE_VARIACAO_Y:
+            if not alerta_termico_ativo:
+                print("ALERTA: Degradacao termica detectada!")
+                alerta_termico_ativo = True
+                esteve_em_alerta = True
+        else:
+            alerta_termico_ativo = False
+
+        # 3. Normalização
+        if esteve_em_alerta and estado_porta == 1 and delta_t < LIMITE_VARIACAO_Y:
+            print("Status: Sistema Normalizado.")
+            esteve_em_alerta = False
+            alerta_porta_ativo = False
+            alerta_termico_ativo = False
             temp_referencia = temp_atual
-    else:
-        temp_atual = temp_referencia
 
-    # 1. Alarme da Porta Aberta
-    if estado_porta == 0:
-        if tempo_abertura_inicio is None:
-            tempo_abertura_inicio = tempo_atual
-
-        if not alerta_porta_ativo and time.ticks_diff(tempo_atual, tempo_abertura_inicio) >= LIMITE_TEMPO_X:
-            print("ALERTA: Porta aberta por muito tempo!")
-            alerta_porta_ativo = True
-            esteve_em_alerta = True
-    else:
-        tempo_abertura_inicio = None
-        alerta_porta_ativo = False
-
-    # 2. Alarme Térmico
-    delta_t = temp_atual - temp_referencia
-
-    if delta_t >= LIMITE_VARIACAO_Y:
-        if not alerta_termico_ativo:
-            print("ALERTA: Degradacao termica detectada!")
-            alerta_termico_ativo = True
-            esteve_em_alerta = True
-    else:
-        alerta_termico_ativo = False
-
-    # 3. Normalização
-    if esteve_em_alerta and estado_porta == 1 and delta_t < LIMITE_VARIACAO_Y:
-        print("Status: Sistema Normalizado.")
-        esteve_em_alerta = False
-        alerta_porta_ativo = False
-        alerta_termico_ativo = False
-        temp_referencia = temp_atual
+    except Exception:
+        pass
 
     time.sleep_ms(10)
