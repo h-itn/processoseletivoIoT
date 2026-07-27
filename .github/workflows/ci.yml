@@ -72,9 +72,8 @@ jobs:
       - name: Prepare MicroPython for Wokwi
         run: |
           cp src/main.py ./main.py
-          echo '[wokwi]' > wokwi.toml
-          echo 'version = 1' >> wokwi.toml
-          echo 'firmware = "main.py"' >> wokwi.toml
+          rm -f fs.bin
+          rm -f wokwi.toml
 
       - name: Test with Wokwi
         uses: wokwi/wokwi-ci-action@v1
