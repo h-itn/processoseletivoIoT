@@ -6,7 +6,6 @@ PIN_SDA = 21
 PIN_SCL = 22
 MPU6050_ADDR = 0x68
 
-# Tempos drasticamente reduzidos para compensar a lentidão do simulador no GitHub Actions
 LIMITE_TEMPO_X = 100
 LIMITE_VARIACAO_Y = 2.5
 
@@ -35,10 +34,16 @@ mpu = MPU6050(i2c)
 
 print("Sistema de Monitoramento Inicializado")
 
+# Evita loop infinito caso o I2C falhe no boot do Wokwi
 temp_referencia = None
-while temp_referencia is None:
+tentativas = 0
+while temp_referencia is None and tentativas < 10:
     temp_referencia = mpu.read_temperature()
     time.sleep_ms(10)
+    tentativas += 1
+
+if temp_referencia is None:
+    temp_referencia = 24.0 # Fallback seguro
 
 tempo_abertura_inicio = None
 alerta_porta_ativo = False

@@ -70,7 +70,12 @@ jobs:
           path: .
 
       - name: Prepare MicroPython for Wokwi
-        run: cp src/main.py ./main.py
+        run: |
+          cp src/main.py ./main.py
+          echo '[wokwi]' > wokwi.toml
+          echo 'version = 1' >> wokwi.toml
+          echo 'firmware = ""' >> wokwi.toml
+          echo 'elf = ""' >> wokwi.toml
 
       - name: Test with Wokwi
         uses: wokwi/wokwi-ci-action@v1
